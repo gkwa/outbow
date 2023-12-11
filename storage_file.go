@@ -10,9 +10,6 @@ type FileStorage struct {
 }
 
 func (f *FileStorage) SaveURL(url string) error {
-	// Implementation for saving to a file
-	// ...
-
 	return nil
 }
 

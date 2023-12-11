@@ -139,8 +139,8 @@ func writeToFile(filename string, content []byte) error {
 
 func initializeStorage() error {
 	// Switch between storage methods here based on your configuration
-	storage = &DatabaseStorage{}
-	// storage = &FileStorage{FileName: "urls.txt"}
+	// storage = &DatabaseStorage{}
+	storage = &FileStorage{FileName: "urls.json"}
 
 	if _, ok := storage.(*DatabaseStorage); ok {
 		if err := initializeDB(); err != nil {

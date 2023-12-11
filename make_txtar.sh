@@ -1,23 +1,18 @@
-set -x
-
 rm -rf /tmp/outbow
 rm -f /tmp/outbow.tar
 rm -f /tmp/filelist.txt
 
 {
-    rg --files ./ |
-        grep -v go.sum |
-        grep -v go.mod |
+    git ls-files |
         grep -v README.org |
-        grep -v gopro000001.scpt |
-        grep -v ./outbow |
-        grep -v gopro.scpt |
-        grep -v gopro.tmpl |
         grep -v make_txtar.sh |
-        grep -v gopro000005.scpt |
-        grep -v storage_file.go |
+        grep -v urls.db |
+        grep -v go.sum |
         grep -v Makefile |
-        grep -v storage_db.go
+        grep -v gopro.scpt.tmpl |
+        grep -v gopro0252.scpt |
+        grep -v storage_db.go |
+        grep -v go.mod
 } | tee /tmp/filelist.txt
 
 tar -cf /tmp/outbow.tar -T /tmp/filelist.txt
