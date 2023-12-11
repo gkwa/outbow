@@ -120,8 +120,8 @@ func Main(storageType string) int {
 	urlCreationStrategy := DefaultURLCreationStrategy{}
 
 	site := NewGoProModelSite(
-		"Hero11", 
-		WithReviewCount(1358), 
+		"Hero11",
+		WithReviewCount(1358),
 		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
 	)
 
