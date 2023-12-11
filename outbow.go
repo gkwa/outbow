@@ -16,8 +16,8 @@ import (
 func Main() int {
 	slog.Debug("outbow", "test", true)
 
-	storage := &FileStorage{FileName: "urls.json"}
-	// storage := &DatabaseStorage{FileName: "urls.db"}
+	// storage := &FileStorage{FileName: "urls.json"}
+	storage := &DatabaseStorage{FileName: "urls.db"}
 
 	InitializeStorage(storage)
 
