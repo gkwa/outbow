@@ -38,16 +38,34 @@ type URLCreationStrategy interface {
 
 type DefaultURLCreationStrategy struct{}
 
-func NewGoProModelSite(model string, reviewCount int, path string) GoProModelSite {
-	return GoProModelSite{
+func NewGoProModelSite(model string, options ...func(*GoProModelSite)) GoProModelSite {
+	site := GoProModelSite{
 		Model:          model,
-		ReviewCount:    reviewCount,
-		ReviewsPerPage: 5,
+		ReviewCount:    0, // Default value
+		ReviewsPerPage: 5, // Default value
 		HomePage: url.URL{
 			Scheme: "https",
 			Host:   "gopro.com",
-			Path:   path,
+			Path:   "/",
 		},
+	}
+
+	for _, option := range options {
+		option(&site)
+	}
+
+	return site
+}
+
+func WithReviewCount(count int) func(*GoProModelSite) {
+	return func(s *GoProModelSite) {
+		s.ReviewCount = count
+	}
+}
+
+func WithPageBasePath(path string) func(*GoProModelSite) {
+	return func(s *GoProModelSite) {
+		s.HomePage.Path = path
 	}
 }
 
@@ -102,8 +120,7 @@ func Main(storageType string) int {
 
 	urlCreationStrategy := DefaultURLCreationStrategy{}
 
-	reviewCount := 1358
-	site := NewGoProModelSite("Hero11", reviewCount, "/en/us/shop/cameras/hero11-black/CHDHX-111-master.html")
+	site := NewGoProModelSite("Hero11", WithReviewCount(1358), WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"))
 
 	myURL, pageCount, err := urlCreationStrategy.CreateURL(site)
 	if err != nil {
