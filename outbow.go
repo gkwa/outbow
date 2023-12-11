@@ -2,14 +2,14 @@ package outbow
 
 import (
 	"bytes"
-	"crypto/rand"
 	"fmt"
 	"log/slog"
-	"math/big"
 	"net/url"
 	"os"
 	"text/template"
 	"time"
+
+	"github.com/taylormonacelli/barpear"
 )
 
 type GoProModelSite struct {
@@ -69,28 +69,15 @@ func WithPageBasePath(path string) func(*GoProModelSite) {
 	}
 }
 
-func (s DefaultURLCreationStrategy) CreateURL(site GoProModelSite) (*url.URL, int, error) {
-	reviewCount := site.ReviewCount
-	reviewsPerPage := site.ReviewsPerPage
-	quotient := reviewCount / reviewsPerPage
-	remainder := reviewCount % reviewsPerPage
-	var maxPageNumber int64 = int64(quotient + 1)
-
-	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
-	n, err := rand.Int(rand.Reader, big.NewInt(maxPageNumber+1))
-	if err != nil {
-		return &url.URL{}, 0, err
-	}
-
-	pageCount := int(n.Int64())
+func (s DefaultURLCreationStrategy) CreateURL(site GoProModelSite, pageNum int) *url.URL {
 	baseURL := &site.HomePage
 
-	if pageCount == 1 {
-		return baseURL, pageCount, nil
+	if pageNum <= 1 {
+		return baseURL
 	}
 
-	baseURL.RawQuery = fmt.Sprintf("yoReviewsPage=%d", pageCount)
-	return baseURL, pageCount, nil
+	baseURL.RawQuery = fmt.Sprintf("yoReviewsPage=%d", pageNum)
+	return baseURL
 }
 
 func Main(storageType string) int {
@@ -125,11 +112,19 @@ func Main(storageType string) int {
 		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
 	)
 
-	myURL, pageCount, err := urlCreationStrategy.CreateURL(site)
-	if err != nil {
-		slog.Error("creating url", "error", err)
-		return 1
+	reviewCount := site.ReviewCount
+	reviewsPerPage := site.ReviewsPerPage
+	quotient := reviewCount / reviewsPerPage
+	remainder := reviewCount % reviewsPerPage
+
+	maxPageNumber := quotient + 1
+	if remainder == 0 {
+		maxPageNumber = quotient
 	}
+
+	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
+	pageNum := pageNumbers[0]
+	myURL := urlCreationStrategy.CreateURL(site, pageNum)
 
 	if err := storage.SaveURL(myURL.String()); err != nil {
 		slog.Error("error saving urls", "error", err)
@@ -143,12 +138,12 @@ func Main(storageType string) int {
 	}
 
 	var applescriptBuf bytes.Buffer
-	if err := genApplescript(&applescriptBuf, pageCount, myURL); err != nil {
+	if err := genApplescript(&applescriptBuf, pageNum, myURL); err != nil {
 		slog.Error("generating Applescript", "error", err)
 		return 1
 	}
 
-	fname := fmt.Sprintf("gopro%04d.scpt", pageCount)
+	fname := fmt.Sprintf("gopro%04d.scpt", pageNum)
 	if err := writeToFile(fname, applescriptBuf.Bytes()); err != nil {
 		slog.Error("writing applescript to file", "error", err)
 		return 1

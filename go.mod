@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/glebarez/sqlite v1.10.0
+	github.com/taylormonacelli/barpear v0.0.0-20231211232338-f4d17b66502e
 	github.com/taylormonacelli/goldbug v0.0.6
 	gorm.io/gorm v1.25.5
 )
