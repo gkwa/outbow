@@ -17,7 +17,7 @@ func Main() int {
 	slog.Debug("outbow", "test", true)
 
 	if err := initializeStorage(); err != nil {
-		slog.Error("Error initializing storage:", err)
+		slog.Error("error initializing storage", err)
 	}
 
 	storedURLs, err := storage.LoadURLs()
@@ -45,13 +45,16 @@ func Main() int {
 	myURL := createURL(pageCount)
 
 	if err := storage.SaveURL(myURL.String()); err != nil {
-		slog.Error("error saving urls", err)
+		slog.Error("error saving urls", "error", err)
 	}
+
+	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
 
 	// don't re-fetch
 	_, found := storedURLs[myURL.String()]
 	if found {
 		slog.Debug("skipping refetch", "url", myURL.String())
+		slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
 		return 0
 	}
 
