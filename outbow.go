@@ -12,11 +12,21 @@ import (
 	"time"
 )
 
-func Main() int {
-	slog.Debug("outbow", "test", true)
+func Main(storageType string) int {
+	var storage URLStorage
 
-	// storage := &FileStorage{FileName: "urls.json"}
-	storage := &DatabaseStorage{FileName: "urls.db"}
+	switch storageType {
+	case "db":
+		storage = &DatabaseStorage{FileName: "urls.db"}
+		InitializeStorage(storage)
+	case "json":
+		storage = &FileStorage{FileName: "urls.json"}
+		InitializeStorage(storage)
+	default:
+		slog.Error("invalid storage type. Supported values: db, json")
+		return 1
+	}
+	slog.Debug("outbow", "test", true)
 
 	InitializeStorage(storage)
 

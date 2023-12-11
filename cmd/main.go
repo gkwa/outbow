@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	verbose   bool
-	logFormat string
+	verbose     bool
+	logFormat   string
+	storageType string
 )
 
 func main() {
@@ -19,6 +20,7 @@ func main() {
 	flag.BoolVar(&verbose, "v", false, "Enable verbose output (shorthand)")
 
 	flag.StringVar(&logFormat, "log-format", "", "Log format (text or json)")
+	flag.StringVar(&storageType, "storage", "db", "Storage type: db or json")
 
 	flag.Parse()
 
@@ -30,6 +32,6 @@ func main() {
 		}
 	}
 
-	code := outbow.Main()
+	code := outbow.Main(storageType)
 	os.Exit(code)
 }
