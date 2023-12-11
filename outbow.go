@@ -112,6 +112,7 @@ func Main(storageType string) int {
 	storedURLs, err := storage.LoadURLs()
 	if err != nil {
 		slog.Error("loading urls", "error", err)
+		return 1
 	}
 
 	for key, value := range storedURLs {
