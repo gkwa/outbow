@@ -1,26 +1,18 @@
 package outbow
 
 import (
-	"sync"
 	"time"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
-var (
-	db    *gorm.DB
-	mutex sync.Mutex
-)
+var db *gorm.DB
 
 // DatabaseStorage is an implementation of URLStorage using a database.
 type DatabaseStorage struct{}
 
 func (d *DatabaseStorage) SaveURL(url string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	// Implementation for saving to the database (GORM, in this case)
 	newURL := URL{URL: url, CreatedAt: time.Now()}
 	result := db.Create(&newURL)
 
@@ -28,9 +20,6 @@ func (d *DatabaseStorage) SaveURL(url string) error {
 }
 
 func (d *DatabaseStorage) LoadURLs() (map[string]time.Time, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	var urls []URL
 	result := db.Find(&urls)
 	if result.Error != nil {
@@ -46,9 +35,6 @@ func (d *DatabaseStorage) LoadURLs() (map[string]time.Time, error) {
 }
 
 func (d *DatabaseStorage) IsURLPresent(url string) (bool, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	var count int64
 	result := db.Model(&URL{}).Where("url = ?", url).Count(&count)
 	if result.Error != nil {

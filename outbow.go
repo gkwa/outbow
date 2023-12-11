@@ -155,9 +155,6 @@ func initializeStorage() error {
 }
 
 func saveURLs(urls map[string]time.Time) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	urlStore = sync.Map{}
 	for url := range urls {
 		urlStore.Store(url, true)
