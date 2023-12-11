@@ -34,10 +34,13 @@ end tell
 
 log "pressing up arrow key"
 tell application "System Events"
+
+    -- bring reviews bar into focus so that reviews are loaded
     repeat 10 times
         key code 126 -- Up arrow key
         delay 0.1 -- Adjust the delay as needed
     end repeat
+
 end tell
 
 log "allow reviews to load"
