@@ -147,7 +147,6 @@ func Main(storageType string) int {
 	}
 
 	fname := fmt.Sprintf("gopro%04d.scpt", pageCount)
-
 	if err := writeToFile(fname, applescriptBuf.Bytes()); err != nil {
 		slog.Error("writing applescript to file", "error", err)
 		return 1
