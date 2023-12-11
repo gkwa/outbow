@@ -14,7 +14,7 @@ rm -f /tmp/filelist.txt
         | grep -v storage_db.go \
         | grep -v storage_file.go \
         | grep -v outbow.go \
-        | grep -v cmd/main.go
+        | grep -v cmd/main.go \
 
 } | tee /tmp/filelist.txt
 
