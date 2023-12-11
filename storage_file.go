@@ -5,14 +5,19 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 )
 
 type FileStorage struct {
 	FileName string
+	mu       sync.Mutex // Mutex for concurrent access to the file
 }
 
 func (f *FileStorage) SaveURL(url string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	urls, err := f.loadFromFile()
 	if err != nil {
 		return err
@@ -29,10 +34,16 @@ func (f *FileStorage) SaveURL(url string) error {
 }
 
 func (f *FileStorage) LoadURLs() (map[string]time.Time, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return f.loadFromFile()
 }
 
 func (f *FileStorage) IsURLPresent(url string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	urls, err := f.loadFromFile()
 	if err != nil {
 		return false, err
