@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"net/url"
 	"os"
-	"sync"
 	"text/template"
 	"time"
 )
@@ -81,10 +80,7 @@ type URLStorage interface {
 	IsURLPresent(url string) (bool, error)
 }
 
-var (
-	urlStore sync.Map
-	storage  URLStorage
-)
+var storage URLStorage
 
 type URL struct {
 	URL       string
@@ -149,31 +145,4 @@ func InitializeStorage(s URLStorage) {
 			slog.Error("error initializing database", err)
 		}
 	}
-}
-
-func saveURLs(urls map[string]time.Time) {
-	urlStore = sync.Map{}
-	for url := range urls {
-		urlStore.Store(url, true)
-		storage.SaveURL(url)
-	}
-}
-
-func isURLPresentInMap(url string) bool {
-	val, ok := urlStore.Load(url)
-	return ok && val.(bool)
-}
-
-func isURLPresentInStorage(url string) (bool, error) {
-	existsInMap := isURLPresentInMap(url)
-	existsInStorage, err := storage.IsURLPresent(url)
-	if err != nil {
-		return false, err
-	}
-
-	if !(existsInMap || existsInStorage) {
-		return false, nil
-	}
-
-	return true, nil
 }
