@@ -75,7 +75,6 @@ func Main(storageType string) int {
 		slog.Error("invalid storage type. Supported values: db, json")
 		return 1
 	}
-	slog.Debug("outbow", "test", true)
 
 	InitializeStorage(storage)
 
