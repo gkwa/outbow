@@ -133,7 +133,6 @@ func writeToFile(filename string, content []byte) error {
 	}
 	defer outputFile.Close()
 
-	// Write the content to the file
 	if _, err := outputFile.Write(content); err != nil {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
