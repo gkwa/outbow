@@ -98,10 +98,8 @@ func Main(storageType string) int {
 	switch storageType {
 	case "db":
 		storage = &DatabaseStorage{FileName: "urls.db"}
-		InitializeStorage(storage)
 	case "json":
 		storage = &FileStorage{FileName: "urls.json"}
-		InitializeStorage(storage)
 	default:
 		slog.Error("invalid storage type. Supported values: db, json")
 		return 1
