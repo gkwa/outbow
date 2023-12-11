@@ -11,7 +11,6 @@ rm -f /tmp/filelist.txt
         grep -v Makefile |
         grep -v gopro.scpt.tmpl |
         grep -v gopro0252.scpt |
-        grep -v storage_db.go |
         grep -v go.mod
 } | tee /tmp/filelist.txt
 

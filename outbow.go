@@ -16,9 +16,10 @@ import (
 func Main() int {
 	slog.Debug("outbow", "test", true)
 
-	if err := initializeStorage(); err != nil {
-		slog.Error("error initializing storage", err)
-	}
+	storage := &FileStorage{FileName: "urls.json"}
+	// storage := &DatabaseStorage{FileName: "urls.db"}
+
+	InitializeStorage(storage)
 
 	storedURLs, err := storage.LoadURLs()
 	if err != nil {
@@ -140,18 +141,15 @@ func writeToFile(filename string, content []byte) error {
 	return nil
 }
 
-func initializeStorage() error {
-	// Switch between storage methods here based on your configuration
-	// storage = &DatabaseStorage{}
-	storage = &FileStorage{FileName: "urls.json"}
+func InitializeStorage(s URLStorage) {
+	storage = s
 
 	if _, ok := storage.(*DatabaseStorage); ok {
-		if err := initializeDB(); err != nil {
-			return err
+		dbFname := storage.(*DatabaseStorage).FileName
+		if err := initializeDB(dbFname); err != nil {
+			slog.Error("error initializing database", err)
 		}
 	}
-
-	return nil
 }
 
 func saveURLs(urls map[string]time.Time) {

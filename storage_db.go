@@ -10,7 +10,9 @@ import (
 var db *gorm.DB
 
 // DatabaseStorage is an implementation of URLStorage using a database.
-type DatabaseStorage struct{}
+type DatabaseStorage struct {
+	FileName string
+}
 
 func (d *DatabaseStorage) SaveURL(url string) error {
 	newURL := URL{URL: url, CreatedAt: time.Now()}
@@ -43,9 +45,9 @@ func (d *DatabaseStorage) IsURLPresent(url string) (bool, error) {
 	return count > 0, nil
 }
 
-func initializeDB() error {
+func initializeDB(dbFname string) error {
 	var err error
-	db, err = gorm.Open(sqlite.Open("urls.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open(dbFname), &gorm.Config{})
 	if err != nil {
 		return err
 	}
