@@ -19,6 +19,23 @@ type GoProModelSite struct {
 	ReviewsPerPage int
 }
 
+func (site *GoProModelSite) TotalPageCount() int {
+	reviewCount := site.ReviewCount
+	reviewsPerPage := site.ReviewsPerPage
+
+	quotient := reviewCount / reviewsPerPage
+	remainder := reviewCount % reviewsPerPage
+
+	maxPageNumber := quotient + 1
+	if remainder == 0 {
+		maxPageNumber = quotient
+	}
+
+	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
+
+	return maxPageNumber
+}
+
 type URLStorage interface {
 	SaveURL(url string) error
 	LoadURLs() (map[string]time.Time, error)
@@ -69,9 +86,7 @@ func WithPageBasePath(path string) func(*GoProModelSite) {
 	}
 }
 
-func (s DefaultURLCreationStrategy) CreateURL(site GoProModelSite, pageNum int) *url.URL {
-	baseURL := &site.HomePage
-
+func (s DefaultURLCreationStrategy) GenerateURL(baseURL url.URL, pageNum int) url.URL {
 	if pageNum <= 1 {
 		return baseURL
 	}
@@ -112,31 +127,21 @@ func Main(storageType string) int {
 		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
 	)
 
-	reviewCount := site.ReviewCount
-	reviewsPerPage := site.ReviewsPerPage
-	quotient := reviewCount / reviewsPerPage
-	remainder := reviewCount % reviewsPerPage
-
-	maxPageNumber := quotient + 1
-	if remainder == 0 {
-		maxPageNumber = quotient
-	}
-
-	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
-
+	maxPageNumber := site.TotalPageCount()
 	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
 	pageNum := pageNumbers[0]
-	myURL := urlCreationStrategy.CreateURL(site, pageNum)
-
-	if err := storage.SaveURL(myURL.String()); err != nil {
-		slog.Error("error saving urls", "error", err)
-	}
+	baseURL := site.HomePage // first reviews start at product homepage
+	myURL := urlCreationStrategy.GenerateURL(baseURL, pageNum)
 
 	// don't re-fetch
 	_, found := storedURLs[myURL.String()]
 	if found {
 		slog.Debug("skipping refetch", "url", myURL.String())
 		return 0
+	}
+
+	if err := storage.SaveURL(myURL.String()); err != nil {
+		slog.Error("error saving urls", "error", err)
 	}
 
 	var applescriptBuf bytes.Buffer
@@ -154,7 +159,7 @@ func Main(storageType string) int {
 	return 0
 }
 
-func genApplescript(outputBuffer *bytes.Buffer, pageCount int, myURL *url.URL) error {
+func genApplescript(outputBuffer *bytes.Buffer, pageCount int, myURL url.URL) error {
 	tmpl, err := template.ParseFiles("gopro.scpt.tmpl")
 	if err != nil {
 		return fmt.Errorf("error reading template: %v", err)
