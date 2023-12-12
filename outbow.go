@@ -122,6 +122,8 @@ func Main(storageType string) int {
 		maxPageNumber = quotient
 	}
 
+	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
+
 	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
 	pageNum := pageNumbers[0]
 	myURL := urlCreationStrategy.CreateURL(site, pageNum)
