@@ -19,6 +19,8 @@ github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/taylormonacelli/barpear v0.0.0-20231211232338-f4d17b66502e h1:I9OyFlh1nrhgH6R8k487LlZZUSrcTz16pDHN0hQ0dlQ=
 github.com/taylormonacelli/barpear v0.0.0-20231211232338-f4d17b66502e/go.mod h1:aVeFGiDkEmwPvblhf1qoVgC9SbrrNhy+Ji3x3k3oilQ=
+github.com/taylormonacelli/barpear v0.0.1 h1:smIUUImnMvBidmizUKY8cmNBtDphXl83JfqH0Ra9HNg=
+github.com/taylormonacelli/barpear v0.0.1/go.mod h1:aVeFGiDkEmwPvblhf1qoVgC9SbrrNhy+Ji3x3k3oilQ=
 github.com/taylormonacelli/goldbug v0.0.6 h1:2NQnMjAfznHkKh8dKPTUHJqnswgqWrcF/NhOnm4TQRI=
 github.com/taylormonacelli/goldbug v0.0.6/go.mod h1:RmeCuiI1RYYPob+BPHEZcmp+IVd6EkoHsoRukenJmH0=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
