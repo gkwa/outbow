@@ -19,6 +19,11 @@ type GoProModelSite struct {
 	ReviewsPerPage int
 }
 
+type PageNumberContainer struct {
+	URL        *url.URL
+	PageNumber int
+}
+
 func (site *GoProModelSite) TotalPageCount() int {
 	reviewCount := site.ReviewCount
 	reviewsPerPage := site.ReviewsPerPage
@@ -121,41 +126,79 @@ func Main(storageType string) int {
 
 	urlCreationStrategy := DefaultURLCreationStrategy{}
 
+	reviewCount := 1358 // get this manually by visiting site to find review count
 	site := NewGoProModelSite(
 		"Hero11",
-		WithReviewCount(1358),
+		WithReviewCount(reviewCount),
 		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
 	)
 
 	maxPageNumber := site.TotalPageCount()
 	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
-	pageNum := pageNumbers[0]
 	baseURL := site.HomePage // first reviews start at product homepage
-	myURL := urlCreationStrategy.GenerateURL(baseURL, pageNum)
 
-	// don't re-fetch
-	_, found := storedURLs[myURL.String()]
-	if found {
-		slog.Debug("skipping refetch", "url", myURL.String())
-		return 0
+	var allPages []PageNumberContainer
+	for pageNum := range pageNumbers {
+		url := urlCreationStrategy.GenerateURL(baseURL, pageNum)
+		pc := PageNumberContainer{URL: &url, PageNumber: pageNum}
+		allPages = append(allPages, pc)
 	}
 
-	if err := storage.SaveURL(myURL.String()); err != nil {
-		slog.Error("error saving urls", "error", err)
+	var pagesNotYetFetched []PageNumberContainer
+	for _, page := range allPages {
+		present, err := storage.IsURLPresent(page.URL.String())
+		if err != nil {
+			panic(err)
+		}
+
+		if !present {
+			pagesNotYetFetched = append(pagesNotYetFetched, page)
+		}
 	}
 
-	var applescriptBuf bytes.Buffer
-	if err := genApplescript(&applescriptBuf, pageNum, myURL); err != nil {
-		slog.Error("generating Applescript", "error", err)
-		return 1
+	// create small subset in order to prevent overloading site
+	y := len(allPages) * 5 / 100
+	z := len(pagesNotYetFetched)
+	if z > 0 {
+		z--
 	}
+	maxIndex := min(y, z)
 
-	fname := fmt.Sprintf("gopro%04d.scpt", pageNum)
-	if err := writeToFile(fname, applescriptBuf.Bytes()); err != nil {
-		slog.Error("writing applescript to file", "error", err)
-		return 1
+	slog.Debug("subtask limit",
+		"maxIndex", maxIndex,
+		"y", y,
+		"z", z,
+		"remaining", len(pagesNotYetFetched),
+	)
+
+	willFetch := pagesNotYetFetched[:maxIndex]
+
+	for _, page := range willFetch {
+		url := page.URL
+		// don't re-fetch
+		_, found := storedURLs[page.URL.String()]
+		if found {
+			slog.Debug("skipping refetch", "url", url.String())
+			continue
+		}
+		if err := storage.SaveURL(url.String()); err != nil {
+			slog.Error("error saving urls", "error", err)
+		}
+
+		var applescriptBuf bytes.Buffer
+		if err := genApplescript(&applescriptBuf, page.PageNumber, *page.URL); err != nil {
+			slog.Error("generating Applescript", "error", err)
+			return 1
+		}
+
+		fname := fmt.Sprintf("gopro%04d.scpt", page.PageNumber)
+		if err := writeToFile(fname, applescriptBuf.Bytes()); err != nil {
+			slog.Error("writing applescript to file", "error", err)
+			return 1
+		}
+
+		time.Sleep(10 * time.Millisecond)
 	}
-
 	return 0
 }
 
