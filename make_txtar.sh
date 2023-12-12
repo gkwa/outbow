@@ -11,6 +11,7 @@ rm -f /tmp/filelist.txt
         | grep -v Makefile \
         | grep -v gopro.scpt.tmpl \
         | grep -v go.mod \
+        | grep -v options/options.go \
         | grep -v storage_db.go \
         | grep -v storage_file.go \
         | grep -v outbow.go \

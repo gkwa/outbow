@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/taylormonacelli/barpear"
+	"github.com/taylormonacelli/outbow/options"
 )
 
 type GoProModelSite struct {
@@ -100,9 +101,9 @@ func (s DefaultURLCreationStrategy) GenerateURL(baseURL url.URL, pageNum int) ur
 	return baseURL
 }
 
-func Main(storageType string) int {
+func Main(options options.Options) int {
 	var storage URLStorage
-	switch storageType {
+	switch options.StorageType {
 	case "db":
 		storage = &DatabaseStorage{FileName: "urls.db"}
 	case "json":
@@ -157,7 +158,7 @@ func Main(storageType string) int {
 	}
 
 	// create small subset in order to prevent overloading site
-	y := len(allPages) * 5 / 100
+	y := len(allPages) * options.SubsetPercentage / 100
 	z := len(pagesNotYetFetched)
 	if z > 0 {
 		z--
