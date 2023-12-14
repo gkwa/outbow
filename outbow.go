@@ -93,7 +93,7 @@ func NewGoProModelSite(model string, options ...func(*GoProModelSite)) GoProMode
 		HomePage: url.URL{
 			Scheme: "https",
 			Host:   "gopro.com",
-			Path:   "/",
+			Path:   "/", // Default value
 		},
 	}
 
@@ -149,21 +149,26 @@ func Main(options options.Options) int {
 		slog.Debug("debug", "url", key, "fetch time", value.Format(time.RFC3339))
 	}
 
+	sites := []GoProModelSite{
+		NewGoProModelSite("Hero10", WithReviewCount(2373), WithPageBasePath("/en/us/shop/cameras/hero10-black/CHDHX-101-master.html")),
+		NewGoProModelSite("Hero11", WithReviewCount(1358), WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html")),
+		NewGoProModelSite("Hero12", WithReviewCount(118), WithPageBasePath("/en/us/shop/cameras/hero12-black/CHDHX-121-master.html")),
+		NewGoProModelSite("max", WithReviewCount(325), WithPageBasePath("/en/us/shop/cameras/max/CHDHZ-202-master.html")),
+	}
+
+	for _, site := range sites {
+		err = dowork(site, storedURLs, options)
+		if err != nil {
+			slog.Error("dowork", "err", err)
+			return 1
+		}
+	}
+
+	return 0
+}
+
+func dowork(site GoProModelSite, storedURLs map[string]time.Time, options options.Options) error {
 	urlCreationStrategy := DefaultURLCreationStrategy{}
-
-	var site GoProModelSite
-
-	site = NewGoProModelSite(
-		"Hero10",
-		WithReviewCount(2373),
-		WithPageBasePath("/en/us/shop/cameras/hero10-black/CHDHX-101-master.html"),
-	)
-
-	site = NewGoProModelSite(
-		"Hero11",
-		WithReviewCount(1358),
-		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
-	)
 
 	maxPageNumber := site.TotalPageCount()
 	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
@@ -250,14 +255,14 @@ func Main(options options.Options) int {
 		err := osascript.CommandResult.Run()
 		if err != nil {
 			slog.Error("command run", "error", err)
-			return 1
+			return err
 		}
 
 		// read clipboard into var
 		clipboardContent, err := clipboard.ReadAll()
 		if err != nil {
 			slog.Error("reading clipboard", "error", err)
-			return 1
+			return err
 		}
 
 		// write clipboard to data file
@@ -270,21 +275,21 @@ func Main(options options.Options) int {
 		err = os.MkdirAll(DataDirAbsPath, os.ModePerm)
 		if err != nil {
 			slog.Error("mkdir had error", "dir", DataDirAbsPath, "error", err)
-			return 1
+			return err
 		}
 
 		if err := os.WriteFile(outPath, []byte(clipboardContent), 0o600); err != nil {
 			fmt.Println("Error:", err)
-			return 1
+			return err
 		}
 
 		if err := storage.SaveURL(url.String()); err != nil {
 			slog.Error("error saving urls", "error", err)
-			return 1
+			return err
 		}
 	}
 
-	return 0
+	return nil
 }
 
 func writeToFile(filename string, content []byte) error {
