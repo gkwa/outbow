@@ -5,4 +5,5 @@ type Options struct {
 	LogFormat        string
 	StorageType      string
 	SubsetPercentage int
+	NoRunOsascript   bool
 }

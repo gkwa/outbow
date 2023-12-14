@@ -3,6 +3,7 @@ module github.com/taylormonacelli/outbow
 go 1.21.1
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/glebarez/sqlite v1.10.0
 	github.com/taylormonacelli/barpear v0.0.1
 	github.com/taylormonacelli/goldbug v0.0.6

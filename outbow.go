@@ -1,14 +1,15 @@
 package outbow
 
 import (
-	"bytes"
 	"fmt"
 	"log/slog"
 	"net/url"
 	"os"
-	"text/template"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/taylormonacelli/barpear"
 	"github.com/taylormonacelli/outbow/options"
 )
@@ -37,7 +38,13 @@ func (site *GoProModelSite) TotalPageCount() int {
 		maxPageNumber = quotient
 	}
 
-	slog.Debug("stats", "pageCount", maxPageNumber, "reviewCount", reviewCount, "reviewsPerPage", reviewsPerPage, "quotient", quotient, "remainder", remainder)
+	slog.Debug("stats",
+		"pageCount", maxPageNumber,
+		"reviewCount", reviewCount,
+		"reviewsPerPage", reviewsPerPage,
+		"quotient", quotient,
+		"remainder", remainder,
+	)
 
 	return maxPageNumber
 }
@@ -48,7 +55,24 @@ type URLStorage interface {
 	IsURLPresent(url string) (bool, error)
 }
 
-var storage URLStorage
+const (
+	DataDir               = "data"
+	numberFormatSpecifier = "%04d"
+)
+
+var (
+	storage        URLStorage
+	DataDirAbsPath string
+)
+
+func init() {
+	var err error
+	DataDirAbsPath, err = filepath.Abs(DataDir)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+}
 
 type URL struct {
 	URL       string
@@ -127,10 +151,17 @@ func Main(options options.Options) int {
 
 	urlCreationStrategy := DefaultURLCreationStrategy{}
 
-	reviewCount := 1358 // get this manually by visiting site to find review count
-	site := NewGoProModelSite(
+	var site GoProModelSite
+
+	site = NewGoProModelSite(
+		"Hero10",
+		WithReviewCount(2373),
+		WithPageBasePath("/en/us/shop/cameras/hero10-black/CHDHX-101-master.html"),
+	)
+
+	site = NewGoProModelSite(
 		"Hero11",
-		WithReviewCount(reviewCount),
+		WithReviewCount(1358),
 		WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html"),
 	)
 
@@ -140,6 +171,9 @@ func Main(options options.Options) int {
 
 	var allPages []PageNumberContainer
 	for pageNum := range pageNumbers {
+		if pageNum == 0 { // FIXME
+			continue
+		}
 		url := urlCreationStrategy.GenerateURL(baseURL, pageNum)
 		pc := PageNumberContainer{URL: &url, PageNumber: pageNum}
 		allPages = append(allPages, pc)
@@ -158,6 +192,10 @@ func Main(options options.Options) int {
 	}
 
 	// create small subset in order to prevent overloading site
+	slog.Debug("subset", "url", slog.Int("subset", options.SubsetPercentage))
+	if options.SubsetPercentage < 100 {
+		slog.Warn("subset", "url limited", slog.Int("subset", options.SubsetPercentage))
+	}
 	y := len(allPages) * options.SubsetPercentage / 100
 	z := len(pagesNotYetFetched)
 	if z > 0 {
@@ -174,52 +212,74 @@ func Main(options options.Options) int {
 
 	willFetch := pagesNotYetFetched[:maxIndex]
 
-	for _, page := range willFetch {
+	for pageIter := 0; pageIter < len(willFetch); pageIter++ {
+		page := willFetch[pageIter]
 		url := page.URL
+
+		slog.Debug("fetching this run",
+			"remaining", len(pagesNotYetFetched)-pageIter,
+			"this batch size", len(willFetch),
+			"remaining this run", len(willFetch)-pageIter,
+		)
+
+		osascript := OsaScript{
+			PageNumberContainer: page,
+		}
+
 		// don't re-fetch
 		_, found := storedURLs[page.URL.String()]
 		if found {
 			slog.Debug("skipping refetch", "url", url.String())
 			continue
 		}
+
+		slog.Debug("page", "number", page.PageNumber)
+
+		osascript.GenApplescript(*page.URL, site.Model)
+
+		if options.NoRunOsascript {
+			continue
+		}
+
+		// clear clipboard
+		clipboard.WriteAll("")
+
+		err := osascript.CommandResult.Run()
+		if err != nil {
+			slog.Error("command run", "error", err)
+			return 1
+		}
+
+		clipboardContent, err := clipboard.ReadAll()
+		if err != nil {
+			slog.Error("reading clipboard", "error", err)
+			return 1
+		}
+
+		err = os.MkdirAll(DataDirAbsPath, os.ModePerm)
+		if err != nil {
+			slog.Error("mkdir had error", "dir", DataDirAbsPath, "error", err)
+			return 1
+		}
+
+		y := "gopro-%s-" + numberFormatSpecifier + ".txt"
+		outFname := fmt.Sprintf(y, strings.ToLower(site.Model), page.PageNumber)
+		outPath := filepath.Join(DataDirAbsPath, outFname)
+
+		slog.Debug("writing data", "path", outPath)
+		if err := os.WriteFile(outPath, []byte(clipboardContent), 0o600); err != nil {
+			fmt.Println("Error:", err)
+			return 1
+		}
+
+		slog.Debug("command", "command", osascript.CommandResult.CommandString())
+
 		if err := storage.SaveURL(url.String()); err != nil {
 			slog.Error("error saving urls", "error", err)
 		}
-
-		var applescriptBuf bytes.Buffer
-		if err := genApplescript(&applescriptBuf, page.PageNumber, *page.URL); err != nil {
-			slog.Error("generating Applescript", "error", err)
-			return 1
-		}
-
-		fname := fmt.Sprintf("gopro%04d.scpt", page.PageNumber)
-		if err := writeToFile(fname, applescriptBuf.Bytes()); err != nil {
-			slog.Error("writing applescript to file", "error", err)
-			return 1
-		}
-
-		time.Sleep(10 * time.Millisecond)
 	}
+
 	return 0
-}
-
-func genApplescript(outputBuffer *bytes.Buffer, pageCount int, myURL url.URL) error {
-	tmpl, err := template.ParseFiles("gopro.scpt.tmpl")
-	if err != nil {
-		return fmt.Errorf("error reading template: %v", err)
-	}
-
-	data := struct {
-		MyURL string
-	}{
-		MyURL: myURL.String(),
-	}
-
-	if err := tmpl.Execute(outputBuffer, data); err != nil {
-		return fmt.Errorf("error executing template: %v", err)
-	}
-
-	return nil
 }
 
 func writeToFile(filename string, content []byte) error {
