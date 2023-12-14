@@ -150,10 +150,10 @@ func Main(options options.Options) int {
 	}
 
 	sites := []GoProModelSite{
+		NewGoProModelSite("max", WithReviewCount(325), WithPageBasePath("/en/us/shop/cameras/max/CHDHZ-202-master.html")),
 		NewGoProModelSite("Hero10", WithReviewCount(2373), WithPageBasePath("/en/us/shop/cameras/hero10-black/CHDHX-101-master.html")),
 		NewGoProModelSite("Hero11", WithReviewCount(1358), WithPageBasePath("/en/us/shop/cameras/hero11-black/CHDHX-111-master.html")),
 		NewGoProModelSite("Hero12", WithReviewCount(118), WithPageBasePath("/en/us/shop/cameras/hero12-black/CHDHX-121-master.html")),
-		NewGoProModelSite("max", WithReviewCount(325), WithPageBasePath("/en/us/shop/cameras/max/CHDHZ-202-master.html")),
 	}
 
 	for _, site := range sites {
