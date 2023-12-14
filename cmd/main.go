@@ -19,6 +19,7 @@ func main() {
 	flag.StringVar(&options.LogFormat, "log-format", "", "Log format (text or json)")
 	flag.StringVar(&options.StorageType, "storage", "db", "Storage type: db or json")
 	flag.IntVar(&options.SubsetPercentage, "subset", 10, "Out of all pages, take a subset percentage of pages")
+	flag.IntVar(&options.AllowReviewsLoadSeconds, "delay", 7, "On slow network pulling reviews can be very slow")
 	flag.BoolVar(&options.NoRunOsascript, "no-osascript-run", true, "Don't run osascript")
 
 	flag.Parse()

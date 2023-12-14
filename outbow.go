@@ -174,6 +174,11 @@ func dowork(site GoProModelSite, storedURLs map[string]time.Time, options option
 	pageNumbers := barpear.RandomPositiveIntegerSliceUpToMax(maxPageNumber)
 	baseURL := site.HomePage // first reviews start at product homepage
 
+	slog.Debug("page numbers",
+		"count", len(pageNumbers),
+		"slice", pageNumbers,
+	)
+
 	var allPages []PageNumberContainer
 	for pageNum := range pageNumbers {
 		if pageNum == 0 { // FIXME
@@ -201,21 +206,20 @@ func dowork(site GoProModelSite, storedURLs map[string]time.Time, options option
 	if options.SubsetPercentage < 100 {
 		slog.Warn("subset", "url limited", slog.Int("subset", options.SubsetPercentage))
 	}
-	y := len(allPages) * options.SubsetPercentage / 100
-	z := len(pagesNotYetFetched)
-	if z > 0 {
-		z--
-	}
-	maxIndex := min(y, z)
+	maxIndex := len(pagesNotYetFetched) * options.SubsetPercentage / 100
 
 	slog.Debug("subtask limit",
 		"maxIndex", maxIndex,
-		"y", y,
-		"z", z,
+		"allPages count", len(allPages),
 		"remaining", len(pagesNotYetFetched),
 	)
 
 	willFetch := pagesNotYetFetched[:maxIndex]
+
+	slog.Debug("willfetch order",
+		"count", len(willFetch),
+		"willfetch", willFetch,
+	)
 
 	for pageIter := 0; pageIter < len(willFetch); pageIter++ {
 		page := willFetch[pageIter]
@@ -228,7 +232,8 @@ func dowork(site GoProModelSite, storedURLs map[string]time.Time, options option
 		)
 
 		osascript := OsaScript{
-			PageNumberContainer: page,
+			PageNumberContainer:     page,
+			AllowReviewsLoadSeconds: options.AllowReviewsLoadSeconds,
 		}
 
 		// don't re-fetch
@@ -240,7 +245,7 @@ func dowork(site GoProModelSite, storedURLs map[string]time.Time, options option
 
 		slog.Debug("page", "number", page.PageNumber)
 
-		osascript.WriteApplescript(*page.URL, site.Model)
+		osascript.WriteApplescript(site.Model)
 
 		if options.NoRunOsascript {
 			continue

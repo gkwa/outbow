@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +11,12 @@ import (
 )
 
 type OsaScript struct {
-	PageNumberContainer  PageNumberContainer
-	Path                 string
-	CommandResult        *CommandResult
-	ClipboardContent     string
-	ClipboardContentPath string
+	PageNumberContainer     PageNumberContainer
+	Path                    string
+	CommandResult           *CommandResult
+	ClipboardContent        string
+	ClipboardContentPath    string
+	AllowReviewsLoadSeconds int
 }
 
 func (script *OsaScript) SaveClipboardContent() error {
@@ -28,16 +28,18 @@ func (script *OsaScript) SaveClipboardContent() error {
 	return nil
 }
 
-func (script *OsaScript) WriteApplescript(myURL url.URL, goproModel string) error {
+func (script *OsaScript) WriteApplescript(goproModel string) error {
 	tmpl, err := template.ParseFiles("gopro.scpt.tmpl")
 	if err != nil {
 		return fmt.Errorf("error reading template: %v", err)
 	}
 
 	data := struct {
-		MyURL string
+		MyURL                   string
+		AllowReviewsLoadSeconds int
 	}{
-		MyURL: myURL.String(),
+		MyURL:                   script.PageNumberContainer.URL.String(),
+		AllowReviewsLoadSeconds: script.AllowReviewsLoadSeconds,
 	}
 
 	var applescriptBuf bytes.Buffer

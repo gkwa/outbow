@@ -42,7 +42,7 @@ tell application "System Events"
 end tell
 
 log "allow reviews to load"
-delay 7
+delay {{.AllowReviewsLoadSeconds}}
 
 log "select all text on page"
 tell application "System Events"
