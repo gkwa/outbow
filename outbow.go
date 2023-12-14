@@ -235,26 +235,37 @@ func Main(options options.Options) int {
 
 		slog.Debug("page", "number", page.PageNumber)
 
-		osascript.GenApplescript(*page.URL, site.Model)
+		osascript.WriteApplescript(*page.URL, site.Model)
 
 		if options.NoRunOsascript {
 			continue
 		}
 
+		slog.Debug("command", "command to run", osascript.CommandResult.CommandString())
+
 		// clear clipboard
 		clipboard.WriteAll("")
 
+		// fill clipboard
 		err := osascript.CommandResult.Run()
 		if err != nil {
 			slog.Error("command run", "error", err)
 			return 1
 		}
 
+		// read clipboard into var
 		clipboardContent, err := clipboard.ReadAll()
 		if err != nil {
 			slog.Error("reading clipboard", "error", err)
 			return 1
 		}
+
+		// write clipboard to data file
+		y := "gopro-%s-" + numberFormatSpecifier + ".txt"
+		outFname := fmt.Sprintf(y, strings.ToLower(site.Model), page.PageNumber)
+		outPath := filepath.Join(DataDirAbsPath, outFname)
+
+		slog.Debug("writing data", "path", outPath)
 
 		err = os.MkdirAll(DataDirAbsPath, os.ModePerm)
 		if err != nil {
@@ -262,20 +273,14 @@ func Main(options options.Options) int {
 			return 1
 		}
 
-		y := "gopro-%s-" + numberFormatSpecifier + ".txt"
-		outFname := fmt.Sprintf(y, strings.ToLower(site.Model), page.PageNumber)
-		outPath := filepath.Join(DataDirAbsPath, outFname)
-
-		slog.Debug("writing data", "path", outPath)
 		if err := os.WriteFile(outPath, []byte(clipboardContent), 0o600); err != nil {
 			fmt.Println("Error:", err)
 			return 1
 		}
 
-		slog.Debug("command", "command", osascript.CommandResult.CommandString())
-
 		if err := storage.SaveURL(url.String()); err != nil {
 			slog.Error("error saving urls", "error", err)
+			return 1
 		}
 	}
 

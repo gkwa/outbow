@@ -28,7 +28,7 @@ func (script *OsaScript) SaveClipboardContent() error {
 	return nil
 }
 
-func (script *OsaScript) GenApplescript(myURL url.URL, goproModel string) error {
+func (script *OsaScript) WriteApplescript(myURL url.URL, goproModel string) error {
 	tmpl, err := template.ParseFiles("gopro.scpt.tmpl")
 	if err != nil {
 		return fmt.Errorf("error reading template: %v", err)
@@ -46,6 +46,12 @@ func (script *OsaScript) GenApplescript(myURL url.URL, goproModel string) error 
 	}
 
 	p := fmt.Sprintf("gopro-%s-%s.scpt", strings.ToLower(goproModel), numberFormatSpecifier)
+
+	err = os.MkdirAll(DataDirAbsPath, os.ModePerm)
+	if err != nil {
+		slog.Error("mkdir had error", "dir", DataDirAbsPath, "error", err)
+		return err
+	}
 
 	fname := fmt.Sprintf(p, script.PageNumberContainer.PageNumber)
 	script.Path = filepath.Join(DataDirAbsPath, fname)
