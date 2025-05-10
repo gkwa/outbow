@@ -7,7 +7,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/taylormonacelli/barpear v0.0.1
 	github.com/taylormonacelli/goldbug v0.0.6
-	gorm.io/gorm v1.26.0
+	gorm.io/gorm v1.26.1
 )
 
 require (
